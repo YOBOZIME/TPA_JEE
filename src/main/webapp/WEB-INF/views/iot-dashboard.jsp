@@ -9,6 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IoT Dashboard - Monitoring Intelligent</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
     <style>
         /* ===== VARIABLES & RESET ===== */
         :root {
@@ -26,6 +27,12 @@
             --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
             --radius: 12px;
             --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         /* ===== GENERAL IMPROVEMENTS ===== */
@@ -53,6 +60,7 @@
             background: var(--gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 10px;
             font-size: 2.5em;
             font-weight: 700;
@@ -135,10 +143,16 @@
             box-shadow: var(--shadow-hover);
         }
 
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
         /* ===== CARDS IMPROVEMENTS ===== */
         .cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 25px;
             margin-bottom: 40px;
         }
@@ -147,7 +161,7 @@
             background: white;
             border-radius: 16px;
             box-shadow: var(--shadow);
-            padding: 25px;
+            padding: 30px;
             text-align: center;
             transition: var(--transition);
             position: relative;
@@ -162,7 +176,6 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: var(--gradient);
         }
 
         .card:hover {
@@ -186,7 +199,7 @@
             font-size: 2.5em;
             font-weight: 700;
             color: var(--dark);
-            margin: 10px 0;
+            margin: 15px 0;
         }
 
         .card-unit {
@@ -202,6 +215,7 @@
             font-size: 0.85em;
             color: var(--secondary);
             display: inline-block;
+            text-transform: capitalize;
         }
 
         /* Specific card colors */
@@ -243,13 +257,8 @@
             transition: var(--transition);
         }
 
-        tr:not(:last-child) td {
-            border-bottom: 1px solid #f1f3f4;
-        }
-
         tr:hover {
             background: #f8fbff;
-            transform: scale(1.01);
         }
 
         /* ===== FORM IMPROVEMENTS ===== */
@@ -281,15 +290,31 @@
 
         /* ===== FILTER BAR IMPROVEMENTS ===== */
         .filters {
-            display: flex;
-            gap: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
             margin: 20px 0;
-            flex-wrap: wrap;
+            background: white;
+            padding: 25px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .filters > div {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filters label {
+            font-weight: 500;
+            color: #333;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9em;
         }
 
         .filters input {
-            flex: 1;
-            min-width: 200px;
+            width: 100%;
         }
 
         /* ===== FOOTER IMPROVEMENTS ===== */
@@ -337,28 +362,21 @@
             animation: fadeIn 0.6s ease-out;
         }
 
-        /* ===== LOADING STATES ===== */
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none !important;
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: var(--secondary);
         }
 
-        /* ===== STATUS INDICATORS ===== */
-        .status-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 8px;
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
         }
-
-        .status-online { background: var(--success); }
-        .status-offline { background: var(--danger); }
-        .status-warning { background: var(--warning); }
     </style>
-
 </head>
+
 <body>
 <div class="app-container">
     <!-- Header -->
@@ -367,24 +385,25 @@
         <p>Surveillance et analyse des données de capteurs en temps réel</p>
     </div>
 
+    <c:set var="selectedCity" value="${param.city != null ? param.city : 'fes'}" />
+
     <!-- Control Bar -->
     <form action="${pageContext.request.contextPath}/fetch-api" method="get" class="control-bar" id="cityForm">
         <div class="city-selector">
             <label for="city"><i class="fas fa-map-marker-alt"></i> Ville :</label>
-            <select class="form-control" name="city" id="city" style="width: 150px;">
+            <select name="city" id="city">
                 <option value="fes" ${selectedCity eq 'fes' ? 'selected' : ''}>Fès</option>
                 <option value="rabat" ${selectedCity eq 'rabat' ? 'selected' : ''}>Rabat</option>
                 <option value="casablanca" ${selectedCity eq 'casablanca' ? 'selected' : ''}>Casablanca</option>
                 <option value="marrakech" ${selectedCity eq 'marrakech' ? 'selected' : ''}>Marrakech</option>
                 <option value="tanger" ${selectedCity eq 'tanger' ? 'selected' : ''}>Tanger</option>
             </select>
-            <input type="hidden" name="cityHidden" id="cityHidden" value="${selectedCity}">
         </div>
         <div style="display: flex; gap: 10px;">
-            <button type="submit" class="btn btn-primary">
+            <button type="submit">
                 <i class="fas fa-sync-alt"></i> Actualiser
             </button>
-            <button type="button" class="btn btn-secondary" id="refreshBtn">
+            <button type="button" id="refreshBtn">
                 <i class="fas fa-redo"></i> Rafraîchir
             </button>
         </div>
@@ -395,12 +414,19 @@
         <c:set var="latestTemperature" value="${null}" />
         <c:set var="latestHumidity" value="${null}" />
         <c:set var="latestPressure" value="${null}" />
+
         <c:forEach var="reading" items="${readings}">
             <c:if test="${fn:containsIgnoreCase(reading.location, selectedCity)}">
                 <c:choose>
-                    <c:when test="${reading.sensorType eq 'TEMPERATURE'}"><c:set var="latestTemperature" value="${reading}" /></c:when>
-                    <c:when test="${reading.sensorType eq 'HUMIDITY'}"><c:set var="latestHumidity" value="${reading}" /></c:when>
-                    <c:when test="${reading.sensorType eq 'PRESSURE'}"><c:set var="latestPressure" value="${reading}" /></c:when>
+                    <c:when test="${reading.sensorType eq 'TEMPERATURE'}">
+                        <c:set var="latestTemperature" value="${reading}" />
+                    </c:when>
+                    <c:when test="${reading.sensorType eq 'HUMIDITY'}">
+                        <c:set var="latestHumidity" value="${reading}" />
+                    </c:when>
+                    <c:when test="${reading.sensorType eq 'PRESSURE'}">
+                        <c:set var="latestPressure" value="${reading}" />
+                    </c:when>
                 </c:choose>
             </c:if>
         </c:forEach>
@@ -456,38 +482,36 @@
 
     <!-- Manual Input Form -->
     <div class="form-section">
-        <h2 class="section-title"><i class="fas fa-plus-circle"></i> Ajouter une Lecture Manuelle</h2>
-        <form id="manualForm">
+        <h2><i class="fas fa-plus-circle"></i> Ajouter une Lecture Manuelle</h2>
+        <form id="manualForm" action="${pageContext.request.contextPath}/iot-dashboard" method="post">
             <div class="form-grid">
                 <div class="form-group">
                     <label for="sensorId">ID du Capteur</label>
-                    <input type="text" id="sensorId" name="sensorId" class="form-control" required placeholder="ex: SENSOR-001">
+                    <input type="text" id="sensorId" name="sensorId" required placeholder="ex: SENSOR-001">
                 </div>
                 <div class="form-group">
                     <label for="sensorType">Type de Capteur</label>
-                    <select id="sensorType" name="sensorType" class="form-control" required>
+                    <select id="sensorType" name="sensorType" required>
                         <option value="">Sélectionnez un type</option>
                         <option value="TEMPERATURE">🌡️ Température</option>
                         <option value="HUMIDITY">💧 Humidité</option>
                         <option value="PRESSURE">🌬️ Pression</option>
-                        <option value="MOTION">🚶 Mouvement</option>
-                        <option value="LIGHT">💡 Lumière</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="value">Valeur</label>
-                    <input type="number" step="any" id="value" name="value" class="form-control" required placeholder="ex: 25.5">
+                    <input type="number" step="any" id="value" name="value" required placeholder="ex: 25.5">
                 </div>
                 <div class="form-group">
                     <label for="unit">Unité</label>
-                    <input type="text" id="unit" name="unit" class="form-control" placeholder="ex: °C, %, hPa">
+                    <input type="text" id="unit" name="unit" placeholder="ex: °C, %, hPa">
                 </div>
                 <div class="form-group">
                     <label for="location">Emplacement</label>
-                    <input type="text" id="location" name="location" class="form-control" placeholder="ex: ${selectedCity} Bâtiment A">
+                    <input type="text" id="location" name="location" placeholder="ex: ${selectedCity} Bâtiment A">
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary" style="margin-top:20px;">
+            <button type="submit" style="margin-top:20px;">
                 <i class="fas fa-paper-plane"></i> Envoyer la Lecture
             </button>
         </form>
@@ -495,13 +519,11 @@
 
     <!-- Readings Table -->
     <div class="form-section">
-        <div class="table-header">
-            <h2 class="section-title" style="margin:0;"><i class="fas fa-table"></i> Historique des Lectures</h2>
-        </div>
+        <h2><i class="fas fa-table"></i> Historique des Lectures</h2>
 
         <c:if test="${empty readings}">
-            <div style="text-align:center; padding:60px; color: var(--gray-600);">
-                <i class="fas fa-inbox" style="font-size:3rem; margin-bottom:20px; opacity:0.5;"></i>
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
                 <h3 style="margin-bottom:10px;">Aucune donnée disponible</h3>
                 <p>Ajoutez votre première lecture pour commencer la surveillance</p>
             </div>
@@ -509,19 +531,30 @@
 
         <c:if test="${not empty readings}">
             <div class="filters">
-                <input type="text" id="filterType" class="form-control" placeholder="Filtrer par type...">
-                <input type="text" id="filterCity" class="form-control" placeholder="Filtrer par ville...">
+                <div>
+                    <label for="filterType">Type :</label>
+                    <input type="text" id="filterType" placeholder="Filtrer par type...">
+                </div>
+                <div>
+                    <label for="filterCity">Ville :</label>
+                    <input type="text" id="filterCity" placeholder="Filtrer par ville...">
+                </div>
+                <div>
+                    <label for="filterDate">Date :</label>
+                    <input type="date" id="filterDate">
+                </div>
             </div>
 
             <div class="table-container">
-                <table class="data-table" id="readingsTable">
+                <table id="readingsTable">
                     <thead>
                     <tr>
-                        <th>Capteur</th>
+                        <th>Sensor ID</th>
                         <th>Type</th>
                         <th>Valeur</th>
                         <th>Unité</th>
-                        <th>Date</th>
+                        <th>Emplacement</th>
+                        <th>Horodatage</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -531,8 +564,10 @@
                             <td>${reading.sensorType}</td>
                             <td>${reading.value}</td>
                             <td>${reading.unit}</td>
-                            <td>${reading.location}</td>
-                            <td><fmt:formatDate value="${reading.timestamp}" pattern="dd/MM/yyyy HH:mm:ss"/></td>
+                            <td>
+                                    ${fn:toUpperCase(fn:substring(fn:split(reading.location, ' - ')[0], 0, 1))}${fn:substring(fn:split(reading.location, ' - ')[0], 1, fn:length(fn:split(reading.location, ' - ')[0]))}
+                            </td>
+                            <td><fmt:formatDate value="${reading.timestampAsDate}" pattern="yyyy-MM-dd HH:mm:ss"/></td>
                         </tr>
                     </c:forEach>
                     </tbody>
@@ -542,79 +577,102 @@
     </div>
 
     <div class="footer">
-        &copy; ${pageContext.request.serverName} | Tableau de Bord IoT
+        &copy; 2025 IoT Platform — Données mises à jour automatiquement
     </div>
 </div>
 
-<!-- JS -->
 <script>
-    const citySelect = document.getElementById('city');
-    const cityHidden = document.getElementById('cityHidden');
-    const cityForm = document.getElementById('cityForm');
+    // Auto-refresh every 30 seconds
+    const REFRESH_INTERVAL = 30000; // 30 seconds
+    let userIsTyping = false;
+    let autoRefreshTimer;
+
+    // Track when user is typing in any input field
+    document.querySelectorAll("input, select, textarea").forEach(el => {
+        el.addEventListener("focus", () => {
+            userIsTyping = true;
+            console.log("User is typing - auto-refresh paused");
+        });
+        el.addEventListener("blur", () => {
+            userIsTyping = false;
+            console.log("User stopped typing - auto-refresh resumed");
+        });
+    });
+
+    // Auto-refresh function
+    function startAutoRefresh() {
+        autoRefreshTimer = setInterval(() => {
+            if (!userIsTyping) {
+                console.log("Auto-refreshing page...");
+                window.location.reload();
+            } else {
+                console.log("User is typing - skipping refresh");
+            }
+        }, REFRESH_INTERVAL);
+    }
+
+    // Start auto-refresh on page load
+    startAutoRefresh();
+
+    // Manual refresh button
     const refreshBtn = document.getElementById('refreshBtn');
-    const filterType = document.getElementById('filterType');
-    const filterCity = document.getElementById('filterCity');
-    const table = document.getElementById('readingsTable');
-    const manualForm = document.getElementById('manualForm');
+    refreshBtn.addEventListener('click', () => {
+        window.location.reload();
+    });
+
+    // City selector auto-submit
+    const citySelect = document.getElementById('city');
+    const cityForm = document.getElementById('cityForm');
+    citySelect.addEventListener('change', () => {
+        cityForm.submit();
+    });
+
+    // Table filters
+    const filterType = document.getElementById("filterType");
+    const filterCity = document.getElementById("filterCity");
+    const filterDate = document.getElementById("filterDate");
+
+    function applyFilters() {
+        const typeVal = (filterType?.value || "").trim().toLowerCase();
+        const cityVal = (filterCity?.value || "").trim().toLowerCase();
+        const dateVal = (filterDate?.value || "").trim();
+
+        const table = document.getElementById("readingsTable");
+        if (!table) return;
+
+        const rows = table.querySelectorAll("tbody tr");
+        rows.forEach(row => {
+            const typeText = row.cells[1].textContent.trim().toLowerCase();
+            const cityText = row.cells[4].textContent.trim().toLowerCase();
+            const dateText = row.cells[5].textContent.trim().substring(0, 10);
+
+            const matchesType = typeVal === "" || typeText.includes(typeVal);
+            const matchesCity = cityVal === "" || cityText.includes(cityVal);
+            const matchesDate = dateVal === "" || dateText === dateVal;
+
+            row.style.display = (matchesType && matchesCity && matchesDate) ? "" : "none";
+        });
+    }
+
+    [filterType, filterCity, filterDate].forEach(input => {
+        if (input) input.addEventListener("input", applyFilters);
+    });
+
+    // Auto-fill unit based on sensor type
     const sensorType = document.getElementById('sensorType');
     const unit = document.getElementById('unit');
     const locationField = document.getElementById('location');
 
-    // City selector auto-submit
-    citySelect.addEventListener('change', () => {
-        cityHidden.value = citySelect.value;
-        cityForm.submit();
-    });
-
-    // Refresh button
-    refreshBtn.addEventListener('click', () => window.location.reload());
-
-    // Table filters
-    function applyFilters() {
-        const typeVal = filterType?.value?.toLowerCase() || "";
-        const cityVal = filterCity?.value?.toLowerCase() || "";
-
-        table.querySelectorAll("tbody tr").forEach(row => {
-            const type = row.cells[1].textContent.toLowerCase();
-            const city = row.cells[4].textContent.toLowerCase();
-            row.style.display = (type.includes(typeVal) && city.includes(cityVal)) ? "" : "none";
-        });
-    }
-    filterType?.addEventListener("input", applyFilters);
-    filterCity?.addEventListener("input", applyFilters);
-
-    // Auto-fill unit & location
     sensorType.addEventListener('change', function() {
         const unitMap = {
             'TEMPERATURE': '°C',
             'HUMIDITY': '%',
-            'PRESSURE': 'hPa',
-            'LIGHT': 'lux',
-            'MOTION': 'detected'
+            'PRESSURE': 'hPa'
         };
         unit.value = unitMap[this.value] || '';
-        if (this.value && !locationField.value) locationField.value = citySelect.value + ' ';
-    });
 
-    // Submit manual form via AJAX
-    manualForm.addEventListener('submit', async function(e){
-        e.preventDefault();
-        const formData = new FormData(manualForm);
-        try {
-            const res = await fetch('${pageContext.request.contextPath}/add-reading', {
-                method: 'POST',
-                body: formData
-            });
-            if(res.ok){
-                alert('Lecture ajoutée avec succès !');
-                manualForm.reset();
-                location.reload(); // optional: reload to update table
-            } else {
-                alert('Erreur lors de l\'ajout.');
-            }
-        } catch(err){
-            console.error(err);
-            alert('Erreur réseau.');
+        if (this.value && !locationField.value) {
+            locationField.value = citySelect.value + ' ';
         }
     });
 </script>
