@@ -45,13 +45,15 @@ public class IoTSensorManagerService {
                 .collect(Collectors.toList());
     }
 
-    // --- NEW: fetch external API and store result ---
     public void fetchAndStoreFromApi(String city) {
         try {
+            // ✅ Normalize input
+            if (city == null || city.isBlank()) city = "fes";
+
             // 🔹 Default coordinates (Fès)
             double latitude = 34.033;
             double longitude = -5.000;
-            String displayName = "Fès";
+            String displayName = "Fes"; // ⚠️ no accent, consistent with JSP filter
 
             // 🔹 Choose coordinates based on selected city
             switch (city.toLowerCase()) {
@@ -76,7 +78,7 @@ public class IoTSensorManagerService {
                     displayName = "Tanger";
                     break;
                 default:
-                    displayName = "Fès";
+                    displayName = "Fes";
             }
 
             // 🔹 Build the API URL dynamically
@@ -103,35 +105,37 @@ public class IoTSensorManagerService {
             JSONObject json = new JSONObject(response.toString());
             JSONObject current = json.getJSONObject("current");
 
+            long timestamp = System.currentTimeMillis();
+
             // 🔹 Create sensor readings
             SensorReading temperature = new SensorReading(
                     UUID.randomUUID().toString(),
-                    "API_SENSOR_TEMP",
+                    "API_SENSOR_TEMP_" + city.toUpperCase(),
                     "TEMPERATURE",
                     current.getDouble("temperature_2m"),
                     "°C",
-                    System.currentTimeMillis(),
-                    displayName + " - External API"
+                    timestamp,
+                    city.toLowerCase() + " - external api"
             );
 
             SensorReading humidity = new SensorReading(
                     UUID.randomUUID().toString(),
-                    "API_SENSOR_HUM",
+                    "API_SENSOR_HUM_" + city.toUpperCase(),
                     "HUMIDITY",
                     current.getDouble("relative_humidity_2m"),
                     "%",
-                    System.currentTimeMillis(),
-                    displayName + " - External API"
+                    timestamp,
+                    city.toLowerCase() + " - external api"
             );
 
             SensorReading pressure = new SensorReading(
                     UUID.randomUUID().toString(),
-                    "API_SENSOR_PRESS",
+                    "API_SENSOR_PRESS_" + city.toUpperCase(),
                     "PRESSURE",
                     current.getDouble("pressure_msl"),
                     "hPa",
-                    System.currentTimeMillis(),
-                    displayName + " - External API"
+                    timestamp,
+                    city.toLowerCase() + " - external api"
             );
 
             // 🔹 Store all readings
@@ -139,7 +143,7 @@ public class IoTSensorManagerService {
             ingestSensorReading(humidity);
             ingestSensorReading(pressure);
 
-            System.out.println("✅ API data fetched for " + displayName + " and stored.");
+            System.out.println("✅ API data fetched and stored for " + displayName);
 
         } catch (Exception e) {
             e.printStackTrace();

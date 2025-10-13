@@ -26,6 +26,6 @@ public class FetchApiServlet extends HttpServlet {
         }
 
         service.fetchAndStoreFromApi(city); // 👈 Pass city to service
-        resp.sendRedirect(req.getContextPath() + "/iot-dashboard");
+        resp.sendRedirect(req.getContextPath() + "/iot-dashboard?city=" + city);
     }
 }
