@@ -1,5 +1,6 @@
 package com.example.iotplatform.model;
 
+import java.util.Date;
 import java.util.Objects;
 
 public class SensorReading {
@@ -22,6 +23,9 @@ public class SensorReading {
         this.location = location;
     }
 
+    public Date getTimestampAsDate() {
+        return new Date(this.timestamp);
+    }
     public String getReadingId() {
         return readingId;
     }
